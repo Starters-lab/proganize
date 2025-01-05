@@ -54,7 +54,7 @@ export default function PDFViewer({
   }, []);
 
   const extractPDFContent = async (pdfDoc: any, numPages: number) => {
-    const MAX_PAGES_PER_BATCH = 10; 
+    const MAX_PAGES_PER_BATCH = 10;
     let fullText = "";
 
     try {
@@ -63,7 +63,10 @@ export default function PDFViewer({
         batchStart <= numPages;
         batchStart += MAX_PAGES_PER_BATCH
       ) {
-        const batchEnd = Math.min(batchStart + MAX_PAGES_PER_BATCH - 1, numPages);
+        const batchEnd = Math.min(
+          batchStart + MAX_PAGES_PER_BATCH - 1,
+          numPages
+        );
 
         const batchPromises = [];
         for (let i = batchStart; i <= batchEnd; i++) {
@@ -71,9 +74,18 @@ export default function PDFViewer({
             pdfDoc.getPage(i).then(async (page: any) => {
               try {
                 const textContent = await page.getTextContent();
-                const pageText = textContent.items.map((item: any) => item.str).join(" ");
+                const pageText = textContent.items
+                  .filter((item: any) => typeof item.str === 'string' && item.str.trim() !== '')
+                  .map((item: any) => item.str.trim())
+                  .join(' ');
+                
+                if (pageText.length === 0) {
+                  console.warn(`No text content found on page ${i}`);
+                }
+                
                 return pageText;
               } catch (error) {
+                console.error(`Error extracting text from page ${i}:`, error);
                 return "";
               }
             })
@@ -81,11 +93,20 @@ export default function PDFViewer({
         }
 
         const batchTexts = await Promise.all(batchPromises);
-        fullText += batchTexts.join("\n\n");
+        const validTexts = batchTexts.filter(text => text.length > 0);
+        
+        if (validTexts.length > 0) {
+          fullText += (fullText ? "\n\n" : "") + validTexts.join("\n\n");
+        }
 
         if (batchEnd < numPages) {
           await new Promise((resolve) => setTimeout(resolve, 200));
         }
+      }
+
+      // Only throw if no text was extracted from any page
+      if (!fullText || fullText.trim().length === 0) {
+        throw new Error("No text could be extracted from the PDF");
       }
 
       return fullText;
@@ -117,22 +138,25 @@ export default function PDFViewer({
 
         const loadingTask = pdfjs.getDocument({
           url: file,
-          cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/cmaps/',
+          cMapUrl: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/cmaps/",
           cMapPacked: true,
         });
-        
+
         const pdfDoc = await loadingTask.promise;
         const metadata = await pdfDoc.getMetadata().catch(() => null);
         const metadataInfo = metadata?.info || {};
 
         const fullText = await extractPDFContent(pdfDoc, numPages);
-
+        
+        // Validate extracted text
         if (!fullText || fullText.trim().length === 0) {
           throw new Error("No text could be extracted from the PDF");
         }
 
+        // Update UI first
         onTextExtracted(fullText);
 
+        // Then save to database
         const savedContent = await pdfService.saveExtractedContent(
           state.currentPDFConversation.id,
           {
@@ -149,24 +173,26 @@ export default function PDFViewer({
         if (!savedContent) {
           throw new Error("Failed to save extracted content");
         }
-
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Error processing PDF";
+        const errorMessage =
+          error instanceof Error ? error.message : "Error processing PDF";
         setError(errorMessage);
         setLoading(false);
-        
-        await pdfService.saveExtractedContent(
-          state.currentPDFConversation.id,
-          {
-            content: "",
-            metadata: {
-              pageCount: numPages,
-              status: "error",
-              error: errorMessage,
+
+        await pdfService
+          .saveExtractedContent(
+            state.currentPDFConversation.id,
+            {
+              content: "",
+              metadata: {
+                pageCount: numPages,
+                status: "error",
+                error: errorMessage,
+              },
             },
-          },
-          state.user.id
-        ).catch(() => {});
+            state.user.id
+          )
+          .catch(() => {});
       }
     },
     [file, state.currentPDFConversation?.id, state.user?.id, onTextExtracted]
@@ -239,7 +265,7 @@ export default function PDFViewer({
   }
 
   return (
-    <div className="relative flex flex-col h-full">
+    <div className='relative flex flex-col h-full'>
       {/* PDF Controls */}
       <div className='flex items-center justify-between p-4 border-b'>
         <div className='flex items-center space-x-2'>
@@ -274,7 +300,9 @@ export default function PDFViewer({
           <Button
             variant='outline'
             size='icon'
-            onClick={() => setPageNumber((prev) => Math.min(numPages, prev + 1))}
+            onClick={() =>
+              setPageNumber((prev) => Math.min(numPages, prev + 1))
+            }
             disabled={pageNumber >= numPages}
           >
             <ChevronRight className='h-4 w-4' />
@@ -282,18 +310,18 @@ export default function PDFViewer({
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto">
+      <div className='flex-1 overflow-auto'>
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/80">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <span className="ml-2">Loading PDF...</span>
+          <div className='absolute inset-0 flex items-center justify-center bg-background/80'>
+            <Loader2 className='h-8 w-8 animate-spin' />
+            <span className='ml-2'>Loading PDF...</span>
           </div>
         )}
 
         {error && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center text-destructive">
-              <FileText className="h-8 w-8 mx-auto mb-2" />
+          <div className='absolute inset-0 flex items-center justify-center'>
+            <div className='text-center text-destructive'>
+              <FileText className='h-8 w-8 mx-auto mb-2' />
               <p>{error}</p>
             </div>
           </div>
@@ -305,9 +333,9 @@ export default function PDFViewer({
             onLoadSuccess={onDocumentLoadSuccess}
             onLoadError={onDocumentLoadError}
             loading={
-              <div className="flex items-center justify-center p-4">
-                <Loader2 className="h-6 w-6 animate-spin" />
-                <span className="ml-2">Loading PDF...</span>
+              <div className='flex items-center justify-center p-4'>
+                <Loader2 className='h-6 w-6 animate-spin' />
+                <span className='ml-2'>Loading PDF...</span>
               </div>
             }
           >
@@ -317,8 +345,8 @@ export default function PDFViewer({
               renderTextLayer={true}
               renderAnnotationLayer={true}
               loading={
-                <div className="flex items-center justify-center p-4">
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                <div className='flex items-center justify-center p-4'>
+                  <Loader2 className='h-4 w-4 animate-spin' />
                 </div>
               }
             />

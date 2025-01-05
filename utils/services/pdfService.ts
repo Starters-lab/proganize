@@ -20,6 +20,12 @@ export const pdfService = {
     content: PDFContent,
     userId: string
   ) {
+    console.log('Saving PDF content:', {
+      pdfConversationId,
+      contentLength: content.content.length,
+      metadata: content.metadata,
+      userId
+    });
     try {
       const { data, error } = await supabase
         .from('pdf_extracted_content')
@@ -74,6 +80,7 @@ export const pdfService = {
       }
 
       const { data, error } = await query;
+      console.log(data);
       if (error) return null;
       return data?.[0] || null;
     } catch {
