@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { CreditDisplay } from "@/components/shared/creditDisplay";
 import { useToast } from "@/hooks/use-toast";
 import { WelcomePopup } from "@/components/shared/WelcomePopup";
+import { useFacebookPixel } from "@/hooks/useFacebookPixel";
 
 export default function Dashboard() {
   const { dispatch, state } = useAppContext();
@@ -189,6 +190,9 @@ export default function Dashboard() {
               total_words_generated: 0,
             },
           });
+
+          const { trackSignup } = useFacebookPixel();
+          trackSignup();
         }
       } catch (error) {
         toast({
