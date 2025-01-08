@@ -12,10 +12,15 @@ import {
   ChevronRight,
   FileText,
   Loader2,
+  Menu,
+  Minus,
+  Plus,
 } from "lucide-react";
 import { useAppContext } from "@/app/context/appContext";
 import { pdfService } from "@/utils/services/pdfService";
-import PDFAnalysisTools from "./pdfAnalysisTools";
+// import PDFAnalysisTools from "./pdfAnalysisTools";
+import { Select } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 // Set worker source
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -75,14 +80,17 @@ export default function PDFViewer({
               try {
                 const textContent = await page.getTextContent();
                 const pageText = textContent.items
-                  .filter((item: any) => typeof item.str === 'string' && item.str.trim() !== '')
+                  .filter(
+                    (item: any) =>
+                      typeof item.str === "string" && item.str.trim() !== ""
+                  )
                   .map((item: any) => item.str.trim())
-                  .join(' ');
-                
+                  .join(" ");
+
                 if (pageText.length === 0) {
                   console.warn(`No text content found on page ${i}`);
                 }
-                
+
                 return pageText;
               } catch (error) {
                 console.error(`Error extracting text from page ${i}:`, error);
@@ -93,8 +101,8 @@ export default function PDFViewer({
         }
 
         const batchTexts = await Promise.all(batchPromises);
-        const validTexts = batchTexts.filter(text => text.length > 0);
-        
+        const validTexts = batchTexts.filter((text) => text.length > 0);
+
         if (validTexts.length > 0) {
           fullText += (fullText ? "\n\n" : "") + validTexts.join("\n\n");
         }
@@ -147,7 +155,7 @@ export default function PDFViewer({
         const metadataInfo = metadata?.info || {};
 
         const fullText = await extractPDFContent(pdfDoc, numPages);
-        
+
         // Validate extracted text
         if (!fullText || fullText.trim().length === 0) {
           throw new Error("No text could be extracted from the PDF");
@@ -265,93 +273,90 @@ export default function PDFViewer({
   }
 
   return (
-    <div className='relative flex flex-col h-full'>
-      {/* PDF Controls */}
-      <div className='flex items-center justify-between p-4 border-b'>
-        <div className='flex items-center space-x-2'>
-          <Button
-            variant='outline'
-            size='icon'
-            onClick={() => setScale((prev) => Math.max(0.5, prev - 0.1))}
-          >
-            <ZoomOut className='h-4 w-4' />
-          </Button>
-          <span className='text-sm'>{Math.round(scale * 100)}%</span>
-          <Button
-            variant='outline'
-            size='icon'
-            onClick={() => setScale((prev) => Math.min(2, prev + 0.1))}
-          >
-            <ZoomIn className='h-4 w-4' />
-          </Button>
+    <div className='flex flex-col lg:flex-row h-[calc(100vh-4rem)] overflow-hidden'>
+      {/* PDF Viewer Section */}
+      <div className='flex-1 min-h-[50vh] lg:min-h-0 border-r relative'>
+        <div className='sticky top-0 z-10 bg-background border-b flex items-center justify-between p-3 md:p-4'>
+          <div className='flex items-center gap-2 overflow-hidden'>
+            <h2 className='font-semibold text-sm md:text-base truncate'>
+              {state.currentPDFConversation?.pdf_name || "No PDF Selected"}
+            </h2>
+          </div>
+
+          <div className='flex items-center gap-2'>
+            <div className='hidden sm:flex items-center gap-2'>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => setScale(scale - 0.1)}
+                disabled={scale <= 0.5}
+              >
+                <Minus className='h-4 w-4' />
+              </Button>
+
+              <span className='text-sm w-12 text-center'>
+                {Math.round(scale * 100)}%
+              </span>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => setScale(scale + 0.1)}
+                disabled={scale >= 2}
+              >
+                <Plus className='h-4 w-4' />
+              </Button>
+            </div>
+          </div>
         </div>
-        <div className='flex items-center space-x-2'>
+
+        <div className='overflow-auto h-[calc(100vh-8rem)] p-4'>
+          <div className='max-w-4xl mx-auto'>
+            <Document
+              file={file}
+              onLoadSuccess={onDocumentLoadSuccess}
+              loading={
+                <div className='flex items-center justify-center h-32'>
+                  <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
+                </div>
+              }
+            >
+              <Page
+                pageNumber={pageNumber}
+                scale={scale}
+                className='shadow-lg mx-auto'
+                loading={
+                  <div className='flex items-center justify-center h-32'>
+                    <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
+                  </div>
+                }
+              />
+            </Document>
+          </div>
+        </div>
+
+        <div className='sticky bottom-0 bg-background border-t p-3 md:p-4 flex justify-center items-center gap-4'>
           <Button
             variant='outline'
-            size='icon'
-            onClick={() => setPageNumber((prev) => Math.max(1, prev - 1))}
+            size='sm'
+            onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
             disabled={pageNumber <= 1}
           >
             <ChevronLeft className='h-4 w-4' />
+            Previous
           </Button>
           <span className='text-sm'>
             Page {pageNumber} of {numPages}
           </span>
           <Button
             variant='outline'
-            size='icon'
-            onClick={() =>
-              setPageNumber((prev) => Math.min(numPages, prev + 1))
-            }
+            size='sm'
+            onClick={() => setPageNumber(Math.min(numPages, pageNumber + 1))}
             disabled={pageNumber >= numPages}
           >
+            Next
             <ChevronRight className='h-4 w-4' />
           </Button>
         </div>
-      </div>
-
-      <div className='flex-1 overflow-auto'>
-        {loading && (
-          <div className='absolute inset-0 flex items-center justify-center bg-background/80'>
-            <Loader2 className='h-8 w-8 animate-spin' />
-            <span className='ml-2'>Loading PDF...</span>
-          </div>
-        )}
-
-        {error && (
-          <div className='absolute inset-0 flex items-center justify-center'>
-            <div className='text-center text-destructive'>
-              <FileText className='h-8 w-8 mx-auto mb-2' />
-              <p>{error}</p>
-            </div>
-          </div>
-        )}
-
-        {file && (
-          <Document
-            file={file}
-            onLoadSuccess={onDocumentLoadSuccess}
-            onLoadError={onDocumentLoadError}
-            loading={
-              <div className='flex items-center justify-center p-4'>
-                <Loader2 className='h-6 w-6 animate-spin' />
-                <span className='ml-2'>Loading PDF...</span>
-              </div>
-            }
-          >
-            <Page
-              pageNumber={pageNumber}
-              scale={scale}
-              renderTextLayer={true}
-              renderAnnotationLayer={true}
-              loading={
-                <div className='flex items-center justify-center p-4'>
-                  <Loader2 className='h-4 w-4 animate-spin' />
-                </div>
-              }
-            />
-          </Document>
-        )}
       </div>
     </div>
   );

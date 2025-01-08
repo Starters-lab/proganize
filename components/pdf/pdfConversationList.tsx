@@ -165,98 +165,94 @@ export default function PDFConversationList() {
   };
 
   return (
-    <div className='flex flex-col h-full m-2'>
-      <div className='flex items-center justify-between mb-4'>
-        <h2 className='font-bold text-xl'>Conversations</h2>
-        <Button
-          variant='outline'
-          className='gap-2'
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <Upload className='h-4 w-4' />
-          New Chat
-        </Button>
-        <input
-          type='file'
-          ref={fileInputRef}
-          onChange={handleFileUpload}
-          accept='application/pdf'
-          className='hidden'
-        />
+    <div className='flex flex-col h-full'>
+      <div className='sticky top-0 z-10 bg-background border-b'>
+        <div className='p-3 md:p-4 space-y-3'>
+          <div className='flex items-center justify-between'>
+            <h2 className='font-semibold text-sm md:text-base'>Conversations</h2>
+          </div>
+          <div className='flex gap-2'>
+            <Button
+              variant='outline'
+              size='icon'
+              onClick={() => fileInputRef.current?.click()}
+              className='shrink-0'
+            >
+              <Upload className='h-4 w-4' />
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {isLoading ? (
-        <div className='flex items-center justify-center p-8'>
-          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary' />
-        </div>
-      ) : conversations.length === 0 ? (
-        <Card className='flex-1'>
-          <CardContent className='flex flex-col items-center justify-center h-full p-6'>
-            <div className='flex flex-col items-center gap-6 text-center'>
-              <Upload className='h-12 w-12 text-muted-foreground' />
-              <div>
-                <h3 className='font-semibold mb-2'>No PDF conversations yet</h3>
-                <p className='text-sm text-muted-foreground'>
-                  Upload a PDF to start chatting!
-                </p>
-              </div>
-              <Button
-                variant='outline'
-                className='gap-2'
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload className='h-4 w-4' />
-                Upload PDF
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className='space-y-4 overflow-auto'>
-          {conversations.map((conversation) => (
-            <Card
-              key={conversation.id}
-              className={`group cursor-pointer transition-colors hover:bg-accent ${
-                state.currentPDFConversation?.id === conversation.id
-                  ? "bg-accent"
-                  : ""
-              }`}
-              onClick={() => handleSelect(conversation)}
+      <div className='flex-1 overflow-y-auto'>
+        {isLoading ? (
+          <div className='flex items-center justify-center p-8'>
+            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary' />
+          </div>
+        ) : conversations.length === 0 ? (
+          <div className='flex flex-col items-center justify-center h-full p-4 text-center text-muted-foreground'>
+            <Upload className='h-8 w-8 mb-2 opacity-50' />
+            <p className='text-sm md:text-base'>No PDF conversations yet</p>
+            <p className='text-xs md:text-sm mt-1'>
+              Upload a PDF to start chatting!
+            </p>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => fileInputRef.current?.click()}
+              className='mt-4 text-xs md:text-sm'
             >
-              <CardHeader className='p-4'>
-                <div className='flex items-start justify-between'>
-                  <div className='flex-1'>
-                    <CardTitle className='text-lg line-clamp-1'>
-                      {conversation.title}
-                    </CardTitle>
-                    <CardDescription>
-                      {formatDistanceToNow(new Date(conversation.updated_at), {
-                        addSuffix: true,
-                      })}
-                    </CardDescription>
-                  </div>
-                  <Button
-                    variant='ghost'
-                    size='icon'
-                    className='opacity-0 group-hover:opacity-100 transition-opacity'
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteConversation(conversation);
-                    }}
-                  >
-                    <Trash2 className='h-4 w-4 text-destructive' />
-                  </Button>
-                </div>
-                {conversation.last_message && (
-                  <p className='text-sm text-muted-foreground line-clamp-2 mt-2'>
-                    {conversation.last_message}
+              <Upload className='h-4 w-4 mr-2' />
+              Upload PDF
+            </Button>
+          </div>
+        ) : (
+          <div className='p-2 md:p-3 space-y-2'>
+            {conversations.map((conversation) => (
+              <div
+                key={conversation.id}
+                className={`group flex items-center gap-2 p-2 rounded-lg hover:bg-accent cursor-pointer ${
+                  state.currentPDFConversation?.id === conversation.id
+                    ? "bg-accent"
+                    : ""
+                }`}
+                onClick={() => handleSelect(conversation)}
+              >
+                <Upload className='h-4 w-4 shrink-0 text-muted-foreground' />
+                <div className='flex-1 min-w-0'>
+                  <p className='text-sm md:text-base font-medium truncate'>
+                    {conversation.title}
                   </p>
-                )}
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
-      )}
+                  <p className='text-xs md:text-sm text-muted-foreground truncate'>
+                    {formatDistanceToNow(new Date(conversation.updated_at), {
+                      addSuffix: true,
+                    })}
+                  </p>
+                </div>
+                <Button
+                  variant='ghost'
+                  size='icon'
+                  className='opacity-0 group-hover:opacity-100 h-8 w-8'
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteConversation(conversation);
+                  }}
+                >
+                  <Trash2 className='h-4 w-4 text-muted-foreground hover:text-destructive' />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <input
+        type='file'
+        ref={fileInputRef}
+        accept='application/pdf'
+        onChange={handleFileUpload}
+        className='hidden'
+      />
     </div>
   );
 }

@@ -28,14 +28,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang='en' suppressHydrationWarning>
-      <body
-        className={`${lotaGrotesque.variable} antialiased`}
-      >
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+      </head>
+      <body className={geistSans.variable}>
         <Script
           async
           defer
@@ -43,16 +44,18 @@ export default function RootLayout({
           data-website-id='2fd5a43f-e6b3-478d-8e76-d26042f05d11'
         />
         <ThemeProvider
-          attribute='class'
-          defaultTheme='system'
+          attribute="class"
+          defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
           <SupabaseProvider>
             <AppProvider>
-              {children}
-              <GlobalTopUpModal />
-              <Toaster />
+              <div className="min-h-screen bg-background">
+                {children}
+                <GlobalTopUpModal />
+                <Toaster />
+              </div>
             </AppProvider>
           </SupabaseProvider>
         </ThemeProvider>

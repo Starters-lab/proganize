@@ -21,6 +21,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, BookOpen, ListChecks, FlaskConical } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getToken } from "@/utils/supabaseOperations";
+import { cn } from "@/utils/cn";
+import { ArrowRight, Trash2, FileText, List, X } from "lucide-react";
 
 interface AnalysisPanelProps {
   pdfContent: string;
@@ -32,6 +34,7 @@ export function AnalysisPanel({ pdfContent }: AnalysisPanelProps) {
   const [results, setResults] = useState<Record<string, any>>({});
   const [showDialog, setShowDialog] = useState(false);
   const [activeAnalysis, setActiveAnalysis] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
   const analysisTypes = {
@@ -128,6 +131,7 @@ export function AnalysisPanel({ pdfContent }: AnalysisPanelProps) {
       setResults({ ...results, [type]: data[type] });
       setActiveAnalysis(type);
       setShowDialog(true);
+      setIsOpen(true);
     } catch (error: any) {
       console.error("Analysis error:", error);
       toast({
@@ -283,29 +287,90 @@ export function AnalysisPanel({ pdfContent }: AnalysisPanelProps) {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className='max-w-2xl max-h-[80vh]'>
-          <DialogHeader>
-            <DialogTitle>
-              {analysisTypes[activeTab as keyof typeof analysisTypes]?.find(
-                (item) => item.id === activeAnalysis
-              )?.title || "Analysis Results"}
-            </DialogTitle>
-            <DialogDescription>
-              {analysisTypes[activeTab as keyof typeof analysisTypes]?.find(
-                (item) => item.id === activeAnalysis
-              )?.description || "View your analysis results below"}
-            </DialogDescription>
-          </DialogHeader>
-          <ScrollArea className='h-full max-h-[60vh] pr-4'>
-            {results[activeAnalysis] && (
-              <div className='space-y-4'>
-                {renderAnalysisResult(activeAnalysis, results[activeAnalysis])}
+      <div
+        className={cn(
+          'w-full lg:w-[400px] fixed lg:relative inset-0 lg:inset-auto bg-background transform transition-transform duration-200 ease-in-out lg:translate-x-0 border-l',
+          isOpen ? 'translate-x-0' : 'translate-x-full'
+        )}
+      >
+        <div className='flex flex-col h-full'>
+          <div className='sticky top-0 z-10 bg-background border-b p-3 md:p-4 flex items-center justify-between'>
+            <div className='flex items-center gap-2'>
+              <Button
+                variant='ghost'
+                size='icon'
+                className='lg:hidden'
+                onClick={() => setIsOpen(false)}
+              >
+                <ArrowRight className='h-4 w-4' />
+              </Button>
+              <h2 className='font-semibold text-sm md:text-base'>Analysis Results</h2>
+            </div>
+            <Button
+              variant='ghost'
+              size='icon'
+              onClick={() => setResults({})}
+              disabled={!Object.keys(results).length}
+              className='text-muted-foreground hover:text-foreground'
+            >
+              <Trash2 className='h-4 w-4' />
+            </Button>
+          </div>
+
+          <div className='flex-1 overflow-y-auto'>
+            {Object.keys(results).length === 0 ? (
+              <div className='flex flex-col items-center justify-center h-full p-4 text-center text-muted-foreground'>
+                <FileText className='h-8 w-8 mb-2 opacity-50' />
+                <p className='text-sm md:text-base'>No analysis results yet</p>
+                <p className='text-xs md:text-sm mt-1'>
+                  Use the analysis tools to generate insights from your PDF
+                </p>
+              </div>
+            ) : (
+              <div className='space-y-4 p-3 md:p-4'>
+                {Object.keys(results).map((result, index) => (
+                  <Card key={index} className='overflow-hidden'>
+                    <CardHeader className='p-3 md:p-4 space-y-1'>
+                      <div className='flex items-center justify-between'>
+                        <div className='flex items-center gap-2'>
+                          {result === 'summary' ? (
+                            <FileText className='h-4 w-4 text-primary' />
+                          ) : (
+                            <List className='h-4 w-4 text-primary' />
+                          )}
+                          <CardTitle className='text-sm md:text-base'>
+                            {result === 'summary'
+                              ? 'Summary'
+                              : 'Extracted Information'}
+                          </CardTitle>
+                        </div>
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          className='h-8 w-8'
+                          onClick={() => setResults({ ...results, [result]: undefined })}
+                        >
+                          <X className='h-4 w-4' />
+                        </Button>
+                      </div>
+                      <CardDescription className='text-xs md:text-sm'>
+                        {result === 'summary'
+                          ? 'Summary'
+                          : 'Extracted Information'}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className='p-3 md:p-4 pt-0'>
+                      <div className='prose prose-sm md:prose-base dark:prose-invert max-w-none'>
+                        {renderAnalysisResult(result, results[result])}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             )}
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

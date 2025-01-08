@@ -181,15 +181,15 @@ export default function ChatLayer({ extractedText }: ChatLayerProps) {
   };
 
   return (
-    <div className='flex flex-col h-[calc(100vh-4rem)]'>
+    <div className='flex flex-col h-[calc(100vh-4rem)] md:h-[calc(100vh-5rem)]'>
       {/* Chat Header */}
-      <div className='p-4 border-b'>
+      <div className='sticky top-0 z-10 bg-background p-3 md:p-4 border-b'>
         <div>
-          <h2 className='font-semibold'>
+          <h2 className='font-semibold text-sm md:text-base'>
             {state.currentPDFConversation?.title || "No Conversation Selected"}
           </h2>
           {state.currentPDFConversation && (
-            <p className='text-sm text-muted-foreground'>
+            <p className='text-xs md:text-sm text-muted-foreground truncate'>
               {state.currentPDFConversation.pdf_name}
             </p>
           )}
@@ -197,9 +197,9 @@ export default function ChatLayer({ extractedText }: ChatLayerProps) {
       </div>
 
       {/* Messages */}
-      <div className='flex-1 overflow-y-auto scroll-smooth h-[calc(100vh-12rem)] p-4 space-y-4'>
+      <div className='flex-1 overflow-y-auto scroll-smooth p-3 md:p-4 space-y-3 md:space-y-4'>
         {!state.currentPDFConversation ? (
-          <div className='flex items-center justify-center h-full text-muted-foreground'>
+          <div className='flex items-center justify-center h-full text-sm md:text-base text-muted-foreground px-4 text-center'>
             Select a conversation or start a new chat
           </div>
         ) : (
@@ -212,9 +212,9 @@ export default function ChatLayer({ extractedText }: ChatLayerProps) {
                 }`}
               >
                 <div
-                  className={`rounded-lg px-4 py-2 max-w-[80%] break-words ${
+                  className={`rounded-lg px-3 md:px-4 py-2 max-w-[85%] md:max-w-[80%] text-sm md:text-base ${
                     message.role === "assistant"
-                      ? "bg-muted prose prose-sm dark:prose-invert max-w-none"
+                      ? "bg-muted prose prose-sm md:prose-base dark:prose-invert max-w-none"
                       : "bg-primary text-primary-foreground"
                   }`}
                 >
@@ -231,7 +231,7 @@ export default function ChatLayer({ extractedText }: ChatLayerProps) {
                     </p>
                   )}
                   {message.created_at && (
-                    <p className='text-xs mt-1 opacity-70'>
+                    <p className='text-[10px] md:text-xs mt-1 opacity-70'>
                       {new Date(message.created_at).toLocaleTimeString()}
                     </p>
                   )}
@@ -240,11 +240,11 @@ export default function ChatLayer({ extractedText }: ChatLayerProps) {
             ))}
             {isLoading && (
               <div className='flex justify-start'>
-                <div className='bg-muted rounded-lg px-4 py-2 max-w-[80%]'>
+                <div className='bg-muted rounded-lg px-3 md:px-4 py-2 max-w-[85%] md:max-w-[80%]'>
                   <div className='flex space-x-2'>
-                    <div className='w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:-0.3s]' />
-                    <div className='w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:-0.15s]' />
-                    <div className='w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce' />
+                    <div className='w-1.5 md:w-2 h-1.5 md:h-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:-0.3s]' />
+                    <div className='w-1.5 md:w-2 h-1.5 md:h-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:-0.15s]' />
+                    <div className='w-1.5 md:w-2 h-1.5 md:h-2 rounded-full bg-muted-foreground/40 animate-bounce' />
                   </div>
                 </div>
               </div>
@@ -255,7 +255,7 @@ export default function ChatLayer({ extractedText }: ChatLayerProps) {
       </div>
 
       {/* Input Area */}
-      <div className='p-4 border-t mt-auto'>
+      <div className='sticky bottom-0 bg-background p-3 md:p-4 border-t mt-auto'>
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -267,6 +267,7 @@ export default function ChatLayer({ extractedText }: ChatLayerProps) {
         >
           <Input
             ref={inputRef}
+            className='text-sm md:text-base'
             placeholder={
               state.currentPDFConversation
                 ? "Type your message..."
@@ -278,6 +279,7 @@ export default function ChatLayer({ extractedText }: ChatLayerProps) {
             type='submit'
             disabled={!state.currentPDFConversation || isLoading}
             variant='default'
+            className='px-3 md:px-4'
           >
             Send
           </Button>

@@ -54,6 +54,7 @@ export default function Nav() {
   const { state, dispatch } = useAppContext();
   const { user, documents, pdfConversations } = state;
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openSections, setOpenSections] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
@@ -75,6 +76,10 @@ export default function Nav() {
   useEffect(() => {
     // Close all sections when navigating
     setOpenSections([]);
+  }, [pathname]);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
   }, [pathname]);
 
   const toggleSection = (href: string) => {
@@ -244,14 +249,110 @@ export default function Nav() {
   };
 
   return (
-    <nav
-      className={cn(
-        "flex flex-col gap-4 p-4 border-r bg-background h-screen",
-        isCollapsed ? "w-[80px]" : "w-[250px]"
+    <>
+      {/* Mobile Navigation Bar */}
+      <div className='lg:hidden fixed top-0 left-0 right-0 h-16 bg-background border-b z-50 px-4'>
+        <div className='flex items-center justify-between h-full'>
+          <Link href='/' className='flex items-center'>
+            <Image
+              src={theme === "dark" ? logoWhite : logoBlack}
+              alt='Logo'
+              width={120}
+              height={30}
+              className='w-auto h-6'
+            />
+          </Link>
+          <div className='flex items-center gap-2'>
+            <Button
+              variant='ghost'
+              size='icon'
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              <Menu className='h-5 w-5' />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className='lg:hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-40'
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
       )}
-    >
-      <div className='p-4 flex items-center justify-between'>
-        {!isCollapsed && (
+
+      {/* Mobile Menu Content */}
+      <div
+        className={cn(
+          "lg:hidden fixed top-16 right-0 w-64 h-[calc(100vh-4rem)] bg-background border-l z-50 transform transition-transform duration-200 ease-in-out overflow-y-auto",
+          isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
+        )}
+      >
+        <div className='flex flex-col h-full'>
+          <nav className='flex-1 px-4 py-4 space-y-2'>
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium",
+                  pathname === item.href
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-accent"
+                )}
+              >
+                <item.icon className='h-4 w-4' />
+                {item.name}
+              </Link>
+            ))}
+          </nav>
+
+          <div className='p-4 border-t'>
+            {user ? (
+              <div className='space-y-2'>
+                <div className='flex items-center gap-2 px-2'>
+                  <Avatar className='h-8 w-8'>
+                    <AvatarImage src={user.user_metadata?.avatar_url} />
+                    <AvatarFallback>
+                      {user.email?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className='flex-1 min-w-0'>
+                    <p className='text-sm font-medium truncate'>{user.email}</p>
+                  </div>
+                </div>
+                <Button
+                  variant='ghost'
+                  className='w-full justify-start'
+                  onClick={async () => {
+                    await signOut();
+                    localStorage.removeItem("appState");
+                    router.push("/");
+                  }}
+                >
+                  <LogOut className='mr-2 h-4 w-4' />
+                  Sign out
+                </Button>
+              </div>
+            ) : (
+              <Button className='w-full' onClick={() => signIn()}>
+                <LogIn className='mr-2 h-4 w-4' />
+                Sign in
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Navigation */}
+      <nav
+        className={cn(
+          "hidden lg:flex h-screen w-64 flex-col left-0 top-0 bottom-0 bg-background border-r transition-all duration-200 ease-in-out",
+          isCollapsed && "w-20"
+        )}
+      >
+        <div className='p-4 flex items-center justify-between'>
           <Link href='/'>
             <Image
               src={theme === "dark" ? logoWhite : logoBlack}
@@ -261,242 +362,248 @@ export default function Nav() {
               className='cursor-pointer'
             />
           </Link>
-        )}
-        <Button
-          variant='ghost'
-          size='icon'
-          onClick={() => setIsCollapsed(!isCollapsed)}
-        >
-          <Menu className='h-4 w-4' />
-        </Button>
-      </div>
-
-      <div className='flex-1 px-3 py-4 space-y-1'>
-        {navigation.map((item) => {
-          const isActive = pathname === item.href;
-          const showList =
-            !isCollapsed &&
-            ((item.href === "/write" && documents?.length > 0) ||
-              (item.href === "/pdf" && pdfConversations?.length > 0));
-
-          return (
-            <div key={item.name}>
-              <div className='flex items-center'>
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "flex flex-1 items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-muted",
-                    isCollapsed && "justify-center"
-                  )}
-                >
-                  <item.icon
-                    className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")}
-                  />
-                  {!isCollapsed && <span>{item.name}</span>}
-                </Link>
-                {!isCollapsed && showList && (
-                  <Button
-                    variant='ghost'
-                    size='sm'
-                    className='px-2'
-                    onClick={() => toggleSection(item.href)}
-                  >
-                    {openSections.includes(item.href) ? (
-                      <ChevronUp className='h-4 w-4' />
-                    ) : (
-                      <ChevronDown className='h-4 w-4' />
-                    )}
-                  </Button>
-                )}
-              </div>
-
-              {showList && (
-                <Collapsible
-                  open={openSections.includes(item.href)}
-                  onOpenChange={() => toggleSection(item.href)}
-                >
-                  <CollapsibleContent>
-                    <div className='pl-8 pr-2 mt-1 space-y-1'>
-                      {!isCollapsed && (
-                        <input
-                          type='text'
-                          placeholder='Search...'
-                          className='w-full px-2 py-1 text-sm bg-background border rounded-md mb-2'
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                      )}
-                      {item.href === "/write" &&
-                        filterItems(documents, searchQuery)?.map((doc: any) => (
-                          <div key={doc.id} className='flex items-center group'>
-                            <div
-                              onClick={() => {
-                                dispatch({
-                                  type: "SET_SELECTED_DOCUMENT",
-                                  payload: doc,
-                                });
-                                dispatch({
-                                  type: "SET_PRODUCT_IDEA",
-                                  payload: "",
-                                });
-                                dispatch({
-                                  type: "SET_CONVERSATION",
-                                  payload: doc.conversation,
-                                });
-                                dispatch({
-                                  type: "SET_HAS_GENERATION_STARTED",
-                                  payload: true,
-                                });
-                                dispatch({
-                                  type: "SET_GENERATED_DOCUMENT",
-                                  payload: doc.content,
-                                });
-                                dispatch({
-                                  type: "SET_IS_EDITOR_VISIBLE",
-                                  payload: true,
-                                });
-                                dispatch({
-                                  type: "SET_CURRENT_DOCUMENT_ID",
-                                  payload: doc.id,
-                                });
-                                dispatch({
-                                  type: "SET_SHOW_INITIAL_CONTENT",
-                                  payload: false,
-                                });
-                                router.push(`/write?id=${doc.id}`);
-                              }}
-                              className={cn(
-                                "flex-1 block py-1 px-2 text-sm rounded hover:bg-muted truncate cursor-pointer",
-                                pathname === `/write?id=${doc.id}` && "bg-muted"
-                              )}
-                            >
-                              {doc.title || "Untitled"}
-                            </div>
-                            <Button
-                              variant='ghost'
-                              size='sm'
-                              className='opacity-0 group-hover:opacity-100 transition-opacity'
-                              onClick={(e) => handleDeleteDocument(e, doc)}
-                            >
-                              <Trash2 className='h-4 w-4 text-muted-foreground hover:text-destructive' />
-                            </Button>
-                          </div>
-                        ))}
-                      {item.href === "/pdf" &&
-                        filterItems(pdfConversations, searchQuery)?.map(
-                          (conv: any) => (
-                            <div
-                              key={conv.id}
-                              className='flex items-center group'
-                            >
-                              <div
-                                onClick={() => {
-                                  dispatch({
-                                    type: "SET_CURRENT_PDF_CONVERSATION",
-                                    payload: conv,
-                                  });
-                                  router.push(`/pdf?id=${conv.id}`);
-                                }}
-                                className={cn(
-                                  "flex-1 block py-1 px-2 text-sm rounded hover:bg-muted truncate cursor-pointer",
-                                  pathname === `/pdf?id=${conv.id}` &&
-                                    "bg-muted"
-                                )}
-                              >
-                                {conv.title || "Untitled"}
-                              </div>
-                              <Button
-                                variant='ghost'
-                                size='sm'
-                                className='opacity-0 group-hover:opacity-100 transition-opacity'
-                                onClick={(e) =>
-                                  handleDeletePdfConversation(e, conv)
-                                }
-                              >
-                                <Trash2 className='h-4 w-4 text-muted-foreground hover:text-destructive' />
-                              </Button>
-                            </div>
-                          )
-                        )}
-                      <Button
-                        variant='ghost'
-                        size='sm'
-                        className='w-full justify-start mt-1'
-                        onClick={
-                          item.href === "/write"
-                            ? handleNewDocument
-                            : handleNewPdfChat
-                        }
-                      >
-                        <Plus className='h-4 w-4 mr-2' />
-                        New {item.href === "/write" ? "Document" : "Chat"}
-                      </Button>
-                      {item.href === "/pdf" && (
-                        <input
-                          type='file'
-                          ref={fileInputRef}
-                          accept='.pdf'
-                          onChange={handleFileUpload}
-                          className='hidden'
-                        />
-                      )}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      <div className='border-t border-border py-4'>
-        <div className='px-3 flex items-center justify-between'>
           <Button
             variant='ghost'
             size='icon'
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            onClick={() => setIsCollapsed(!isCollapsed)}
           >
-            {theme === "dark" ? (
-              <Sun className='h-4 w-4' />
-            ) : (
-              <Moon className='h-4 w-4' />
-            )}
+            <Menu className='h-4 w-4' />
           </Button>
-
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant='ghost' size='sm'>
-                  <Avatar className='h-6 w-6'>
-                    <AvatarImage
-                      src={user.user_metadata.avatar_url}
-                      alt={user.user_metadata.full_name}
-                    />
-                    <AvatarFallback>
-                      {user.user_metadata.full_name?.charAt(0) ||
-                        user.email?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align='end'>
-                <DropdownMenuItem onClick={handleGoogleAuth}>
-                  <LogOut className='h-4 w-4 mr-2' />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Button variant='ghost' size='sm' onClick={handleGoogleAuth}>
-              <LogIn className='h-4 w-4 mr-2' />
-              Sign In
-            </Button>
-          )}
         </div>
-      </div>
-    </nav>
+
+        <div className='flex-1 px-3 py-4 space-y-1'>
+          {navigation.map((item) => {
+            const isActive = pathname === item.href;
+            const showList =
+              !isCollapsed &&
+              ((item.href === "/write" && documents?.length > 0) ||
+                (item.href === "/pdf" && pdfConversations?.length > 0));
+
+            return (
+              <div key={item.name}>
+                <div className='flex items-center'>
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "flex flex-1 items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-muted",
+                      isCollapsed && "justify-center"
+                    )}
+                  >
+                    <item.icon
+                      className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")}
+                    />
+                    {!isCollapsed && <span>{item.name}</span>}
+                  </Link>
+                  {!isCollapsed && showList && (
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      className='px-2'
+                      onClick={() => toggleSection(item.href)}
+                    >
+                      {openSections.includes(item.href) ? (
+                        <ChevronUp className='h-4 w-4' />
+                      ) : (
+                        <ChevronDown className='h-4 w-4' />
+                      )}
+                    </Button>
+                  )}
+                </div>
+
+                {showList && (
+                  <Collapsible
+                    open={openSections.includes(item.href)}
+                    onOpenChange={() => toggleSection(item.href)}
+                  >
+                    <CollapsibleContent>
+                      <div className='pl-8 pr-2 mt-1 space-y-1'>
+                        {!isCollapsed && (
+                          <input
+                            type='text'
+                            placeholder='Search...'
+                            className='w-full px-2 py-1 text-sm bg-background border rounded-md mb-2'
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                          />
+                        )}
+                        {item.href === "/write" &&
+                          filterItems(documents, searchQuery)?.map(
+                            (doc: any) => (
+                              <div
+                                key={doc.id}
+                                className='flex items-center group'
+                              >
+                                <div
+                                  onClick={() => {
+                                    dispatch({
+                                      type: "SET_SELECTED_DOCUMENT",
+                                      payload: doc,
+                                    });
+                                    dispatch({
+                                      type: "SET_PRODUCT_IDEA",
+                                      payload: "",
+                                    });
+                                    dispatch({
+                                      type: "SET_CONVERSATION",
+                                      payload: doc.conversation,
+                                    });
+                                    dispatch({
+                                      type: "SET_HAS_GENERATION_STARTED",
+                                      payload: true,
+                                    });
+                                    dispatch({
+                                      type: "SET_GENERATED_DOCUMENT",
+                                      payload: doc.content,
+                                    });
+                                    dispatch({
+                                      type: "SET_IS_EDITOR_VISIBLE",
+                                      payload: true,
+                                    });
+                                    dispatch({
+                                      type: "SET_CURRENT_DOCUMENT_ID",
+                                      payload: doc.id,
+                                    });
+                                    dispatch({
+                                      type: "SET_SHOW_INITIAL_CONTENT",
+                                      payload: false,
+                                    });
+                                    router.push(`/write?id=${doc.id}`);
+                                  }}
+                                  className={cn(
+                                    "flex-1 block py-1 px-2 text-sm rounded hover:bg-muted truncate cursor-pointer",
+                                    pathname === `/write?id=${doc.id}` &&
+                                      "bg-muted"
+                                  )}
+                                >
+                                  {doc.title || "Untitled"}
+                                </div>
+                                <Button
+                                  variant='ghost'
+                                  size='sm'
+                                  className='opacity-0 group-hover:opacity-100 transition-opacity'
+                                  onClick={(e) => handleDeleteDocument(e, doc)}
+                                >
+                                  <Trash2 className='h-4 w-4 text-muted-foreground hover:text-destructive' />
+                                </Button>
+                              </div>
+                            )
+                          )}
+                        {item.href === "/pdf" &&
+                          filterItems(pdfConversations, searchQuery)?.map(
+                            (conv: any) => (
+                              <div
+                                key={conv.id}
+                                className='flex items-center group'
+                              >
+                                <div
+                                  onClick={() => {
+                                    dispatch({
+                                      type: "SET_CURRENT_PDF_CONVERSATION",
+                                      payload: conv,
+                                    });
+                                    router.push(`/pdf?id=${conv.id}`);
+                                  }}
+                                  className={cn(
+                                    "flex-1 block py-1 px-2 text-sm rounded hover:bg-muted truncate cursor-pointer",
+                                    pathname === `/pdf?id=${conv.id}` &&
+                                      "bg-muted"
+                                  )}
+                                >
+                                  {conv.title || "Untitled"}
+                                </div>
+                                <Button
+                                  variant='ghost'
+                                  size='sm'
+                                  className='opacity-0 group-hover:opacity-100 transition-opacity'
+                                  onClick={(e) =>
+                                    handleDeletePdfConversation(e, conv)
+                                  }
+                                >
+                                  <Trash2 className='h-4 w-4 text-muted-foreground hover:text-destructive' />
+                                </Button>
+                              </div>
+                            )
+                          )}
+                        <Button
+                          variant='ghost'
+                          size='sm'
+                          className='w-full justify-start mt-1'
+                          onClick={
+                            item.href === "/write"
+                              ? handleNewDocument
+                              : handleNewPdfChat
+                          }
+                        >
+                          <Plus className='h-4 w-4 mr-2' />
+                          New {item.href === "/write" ? "Document" : "Chat"}
+                        </Button>
+                        {item.href === "/pdf" && (
+                          <input
+                            type='file'
+                            ref={fileInputRef}
+                            accept='.pdf'
+                            onChange={handleFileUpload}
+                            className='hidden'
+                          />
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className='border-t border-border py-4'>
+          <div className='px-3 flex items-center justify-between'>
+            <Button
+              variant='ghost'
+              size='icon'
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            >
+              {theme === "dark" ? (
+                <Sun className='h-4 w-4' />
+              ) : (
+                <Moon className='h-4 w-4' />
+              )}
+            </Button>
+
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant='ghost' size='sm'>
+                    <Avatar className='h-6 w-6'>
+                      <AvatarImage
+                        src={user.user_metadata.avatar_url}
+                        alt={user.user_metadata.full_name}
+                      />
+                      <AvatarFallback>
+                        {user.user_metadata.full_name?.charAt(0) ||
+                          user.email?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align='end'>
+                  <DropdownMenuItem onClick={handleGoogleAuth}>
+                    <LogOut className='h-4 w-4 mr-2' />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button variant='ghost' size='sm' onClick={handleGoogleAuth}>
+                <LogIn className='h-4 w-4 mr-2' />
+                Sign In
+              </Button>
+            )}
+          </div>
+        </div>
+      </nav>
+    </>
   );
 }
