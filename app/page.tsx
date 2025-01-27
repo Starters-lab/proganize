@@ -1,5 +1,6 @@
 "use client";
-
+import { QuickActions } from "@/components/dashboard/QuickActions";
+import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { useState, useEffect } from "react";
 import { useAppContext } from "./context/appContext";
 import { supabase } from "@/utils/supabase/instance";
@@ -15,25 +16,24 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Nav from "@/components/layout/nav";
-import { RecentItems } from "@/components/dashboard/RecentItems";
-import { PromotionCard } from "@/components/dashboard/PromotionCard";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-
 import { Button } from "@/components/ui/button";
 import { CreditDisplay } from "@/components/shared/creditDisplay";
 import { useToast } from "@/hooks/use-toast";
 import { WelcomePopup } from "@/components/shared/WelcomePopup";
 import { useFacebookPixel } from "@/hooks/useFacebookPixel";
+import { ChevronRight } from "lucide-react"; // Import ChevronRight icon
 
-export default function Dashboard() {
+export default function DashboardPage() {
+  // const supabase = createServerComponentClient({ cookies });
+
+  // const {
+  //   data: { session },
+  // } = await supabase.auth.getSession();
+
+  // if (!session) {
+  //   redirect("/login");
+  // }
+
   const { dispatch, state } = useAppContext();
   const router = useRouter();
   const [stats, setStats] = useState({
@@ -437,142 +437,68 @@ export default function Dashboard() {
   ];
 
   return (
-    <>
-      <div className='flex h-screen overflow-hidden'>
-        <Nav />
-        <div className='flex-1 overflow-y-auto'>
-          <main className='container mx-auto p-6 space-y-8'>
-            <div className='flex items-center justify-between'>
-              <div>
-                <h1 className='text-3xl font-bold'>
-                  Welcome
-                  {state.user
-                    ? `, ${state.user.user_metadata.full_name?.toLowerCase()}`
-                    : ""}
-                </h1>
-                <p className='text-muted-foreground mt-2'>
-                  Here's an overview of your workspace
-                </p>
-              </div>
-              {state.user && (
-                <div className='flex items-center gap-4'>
-                  <div className='bg-muted rounded-lg px-4 py-2'>
-                    <CreditDisplay variant='minimal' />
-                  </div>
-                  <Button
-                    onClick={() =>
-                      dispatch({ type: "SET_SHOW_TOPUP_MODAL", payload: true })
-                    }
-                  >
-                    <CreditCard className='h-4 w-4 mr-2' />
-                    Top Up
-                  </Button>
-                </div>
-              )}
-            </div>
-
+    <div className='flex flex-col h-screen lg:flex-row'>
+      <Nav />
+      <div className='flex-1 overflow-y-auto pt-16 lg:pt-0 lg:pl-72'>
+        <main className='container mx-auto px-4 py-4 lg:p-6 space-y-6 lg:space-y-8'>
+          <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
             <div>
-              <h2 className='text-2xl font-bold mb-4'>Get Started With</h2>
-              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
-                {state.isLoading
-                  ? // Loading skeletons for features
-                    Array(6)
-                      .fill(0)
-                      .map((_, i) => (
-                        <div
-                          key={i}
-                          className='rounded-lg border bg-card text-card-foreground shadow-sm'
-                        >
-                          <div className='p-6 space-y-2'>
-                            <Skeleton className='h-8 w-8 rounded' />
-                            <Skeleton className='h-5 w-32' />
-                            <Skeleton className='h-4 w-full' />
-                          </div>
-                        </div>
-                      ))
-                  : features.map((feature) => (
-                      <button
-                        key={feature.title}
-                        className='w-full'
-                        onClick={feature.action}
-                      >
-                        <div className='rounded-lg border bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-lg'>
-                          <div className='p-6 space-y-2'>
-                            <feature.icon
-                              className={`w-8 h-8 ${feature.color}`}
-                            />
-                            <h3 className='font-semibold'>{feature.title}</h3>
-                            <p className='text-sm text-muted-foreground'>
-                              {feature.description}
-                            </p>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-              </div>
+              <h1 className='text-2xl font-bold tracking-tight'>
+                Welcome back{state.user?.user_metadata?.full_name ? `, ${state.user.user_metadata.full_name}` : ''}
+              </h1>
+              <p className='text-muted-foreground'>
+                Here's an overview of your workspace
+              </p>
             </div>
-
-            <div className='grid grid-cols-1 lg:grid-cols-4 gap-6'>
-              <RecentItems
-                items={recentItems}
-                title='Recent Activity'
-                description='Your latest documents and conversations'
-              />
-              <div className='space-y-8'>
-                {/* Holiday Promotions */}
-                <div className='space-y-4'>
-                  <div className='flex items-center justify-between'>
-                    <div className='flex items-center gap-2'>
-                      <h2 className='text-2xl font-bold'>Holiday Specials</h2>
-                      <Badge variant='destructive' className='animate-pulse'>
-                        Limited Time
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <CarouselWrapper items={HOLIDAY_PROMOTIONS} />
+            {state.user && (
+              <div className='flex items-center gap-3'>
+                <div className='bg-muted rounded-lg px-3 py-2 lg:px-4'>
+                  <CreditDisplay variant='minimal' />
                 </div>
+                <Button
+                  onClick={() =>
+                    dispatch({ type: "SET_SHOW_TOPUP_MODAL", payload: true })
+                  }
+                  size='sm'
+                  className='lg:text-base'
+                >
+                  <CreditCard className='h-4 w-4 mr-2' />
+                  Top Up
+                </Button>
               </div>
+            )}
+          </div>
+
+          <div className='space-y-6 lg:space-y-8'>
+            {/* Quick Actions Section */}
+            <QuickActions />
+
+            {/* Recent Activity Section */}
+            <div>
+              <div className='flex items-center justify-between mb-4 lg:mb-6'>
+                <h2 className='text-xl lg:text-2xl font-bold text-gray-900'>
+                  Recent Activity
+                </h2>
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  className='text-xs lg:text-sm text-muted-foreground hover:text-primary'
+                >
+                  View all
+                  <ChevronRight className='ml-1 h-4 w-4' />
+                </Button>
+              </div>
+              <RecentActivity items={recentItems} />
             </div>
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
       {showWelcomePopup && (
         <WelcomePopup
-          userName={userName}
           onClose={() => setShowWelcomePopup(false)}
           isOpen={showWelcomePopup}
         />
       )}
-    </>
-  );
-}
-
-function CarouselWrapper({ items }: { items: any[] }) {
-  return (
-    <Carousel
-      opts={{
-        align: "center",
-        loop: true,
-        skipSnaps: false,
-        startIndex: 0,
-        dragFree: false,
-      }}
-      className='w-full max-w-3xl mx-auto'
-    >
-      <CarouselContent>
-        {items.map((item, index) => (
-          <CarouselItem key={index} className='basis-full'>
-            <div className='p-1'>
-              <PromotionCard {...item} />
-            </div>
-          </CarouselItem>
-        ))}
-      </CarouselContent>
-      <div className='hidden md:block'>
-        <CarouselPrevious />
-        <CarouselNext />
-      </div>
-    </Carousel>
+    </div>
   );
 }
