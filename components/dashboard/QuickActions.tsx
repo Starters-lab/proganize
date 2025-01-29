@@ -14,12 +14,12 @@ import { useRouter } from "next/navigation";
 
 const quickActions = [
   {
-    title: "Note Editor",
-    description: "Create and edit your study notes with AI assistance",
-    icon: PenTool,
-    href: "/write",
-    color: "text-blue-500",
-    bgColor: "bg-blue-50",
+    title: "Flashcards",
+    description: "Create and practice with flashcards for better memorization",
+    icon: Slash,
+    href: "/flashcards",
+    color: "text-purple-500",
+    bgColor: "bg-purple-50",
   },
   {
     title: "Doc Chat",
@@ -30,13 +30,14 @@ const quickActions = [
     bgColor: "bg-green-50",
   },
   {
-    title: "Flashcards",
-    description: "Create and practice with flashcards for better memorization",
-    icon: Slash,
-    href: "/flashcards",
-    color: "text-purple-500",
-    bgColor: "bg-purple-50",
+    title: "Note Editor",
+    description: "Create and edit your study notes with AI assistance",
+    icon: PenTool,
+    href: "/write",
+    color: "text-blue-500",
+    bgColor: "bg-blue-50",
   },
+
   {
     title: "Quizzes",
     description: "Test your knowledge with AI-generated quizzes",
@@ -84,7 +85,9 @@ export function QuickActions() {
 
   return (
     <div className='w-full'>
-      <h2 className='text-xl lg:text-2xl font-bold text-gray-900 mb-4 lg:mb-6'>Quick Actions</h2>
+      <h2 className='text-xl lg:text-2xl font-bold text-gray-900 mb-4 lg:mb-6'>
+        Quick Actions
+      </h2>
       <div className='grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4'>
         {quickActions.map((action) => {
           const Icon = action.icon;
@@ -100,8 +103,12 @@ export function QuickActions() {
                 >
                   <Icon className={`${action.color} w-5 h-5 lg:w-6 lg:h-6`} />
                 </div>
-                <h3 className='font-semibold text-base lg:text-lg mb-1 lg:mb-2'>{action.title}</h3>
-                <p className='text-xs lg:text-sm text-gray-500 line-clamp-2'>{action.description}</p>
+                <h3 className='font-semibold text-base lg:text-lg mb-1 lg:mb-2'>
+                  {action.title}
+                </h3>
+                <p className='text-xs lg:text-sm text-gray-500 line-clamp-2'>
+                  {action.description}
+                </p>
               </CardContent>
             </Card>
           );

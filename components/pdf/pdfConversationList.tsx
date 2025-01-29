@@ -1,33 +1,53 @@
-"use client";
-
 import { useRef, useState, useEffect } from "react";
 import { useAppContext } from "@/app/context/appContext";
 import { supabase } from "@/utils/supabase/instance";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
-import { Upload, Trash2 } from "lucide-react";
+  Upload,
+  Trash2,
+  Search,
+  FileText,
+  Clock,
+  Plus,
+  Menu,
+  X,
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { STORAGE_CONSTANTS, ERROR_MESSAGES } from "@/utils/constants";
 import { PDFConversation } from "@/types/pdf";
 import { formatPDFTitle } from "@/utils/helpers";
+import cn from "classnames";
 
 export default function PDFConversationList() {
   const { state, dispatch } = useAppContext();
   const [conversations, setConversations] = useState<PDFConversation[]>([]);
+  const [filteredConversations, setFilteredConversations] = useState<
+    PDFConversation[]
+  >([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (state.user) {
+      console.log(state.user);
       fetchConversations();
     }
   }, [state.user]);
+
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setFilteredConversations(conversations);
+    } else {
+      const filtered = conversations.filter(
+        (conv) =>
+          conv.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          conv.pdf_name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredConversations(filtered);
+    }
+  }, [searchQuery, conversations]);
 
   const fetchConversations = async () => {
     try {
@@ -165,85 +185,110 @@ export default function PDFConversationList() {
   };
 
   return (
-    <div className='flex flex-col h-full'>
-      <div className='sticky top-0 z-10 bg-background border-b'>
-        <div className='p-3 md:p-4 space-y-3'>
-          <div className='flex items-center justify-between'>
-            <h2 className='font-semibold text-sm md:text-base'>Conversations</h2>
+    <>
+      <div className='w-80 border-r bg-muted/10 lg:flex-shrink-0 lg:relative lg:h-full hidden lg:block'>
+        <div className='flex flex-col h-[calc(100%-20px)]'>
+          {/* Header */}
+          <div className='p-4 border-b space-y-4'>
+            <div className='flex items-center justify-between'>
+              <div className='flex items-center gap-3'>
+                <h2 className='font-semibold'>Chat history</h2>
+              </div>
+            </div>
+            <div className='relative'>
+              <Search className='absolute left-2 top-2.5 h-4 w-4 text-muted-foreground' />
+              <Input
+                placeholder='Search documents...'
+                className='pl-8'
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
-          <div className='flex gap-2'>
-            <Button
-              variant='outline'
-              size='icon'
-              onClick={() => fileInputRef.current?.click()}
-              className='shrink-0'
-            >
-              <Upload className='h-4 w-4' />
-            </Button>
+
+          {/* List Content */}
+          <div className='flex-1 overflow-y-auto'>
+            {isLoading ? (
+              <div className='flex items-center justify-center p-8'>
+                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary' />
+              </div>
+            ) : filteredConversations.length === 0 ? (
+              <div className='flex flex-col items-center justify-center h-full p-4 text-center text-muted-foreground'>
+                {searchQuery ? (
+                  <>
+                    <FileText className='h-8 w-8 mb-2 opacity-50' />
+                    <p className='text-sm'>No documents found</p>
+                    <p className='text-xs mt-1'>Try a different search term</p>
+                  </>
+                ) : (
+                  <>
+                    <Upload className='h-8 w-8 mb-2 opacity-50' />
+                    <p className='text-sm'>No documents yet</p>
+                    <p className='text-xs mt-1'>
+                      Upload a PDF to start chatting!
+                    </p>
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={() => fileInputRef.current?.click()}
+                      className='mt-4'
+                    >
+                      <Upload className='h-4 w-4 mr-2' />
+                      Upload PDF
+                    </Button>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className='divide-y'>
+                {filteredConversations.map((conversation) => (
+                  <div
+                    key={conversation.id}
+                    className={`group p-4 hover:bg-accent/50 cursor-pointer ${
+                      state.currentPDFConversation?.id === conversation.id
+                        ? "bg-accent"
+                        : ""
+                    }`}
+                    onClick={() => handleSelect(conversation)}
+                  >
+                    <div className='flex items-start justify-between'>
+                      <div className='flex items-start space-x-3'>
+                        <div className='mt-1'>
+                          <FileText className='h-5 w-5 text-primary' />
+                        </div>
+                        <div className='space-y-1'>
+                          <p className='font-medium leading-none'>
+                            {conversation.title}
+                          </p>
+                          <div className='flex items-center text-xs text-muted-foreground'>
+                            <Clock className='h-3 w-3 mr-1' />
+                            {formatDistanceToNow(
+                              new Date(conversation.updated_at),
+                              {
+                                addSuffix: true,
+                              }
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        className='opacity-0 group-hover:opacity-100 h-8 w-8'
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteConversation(conversation);
+                        }}
+                      >
+                        <Trash2 className='h-4 w-4 text-muted-foreground hover:text-destructive' />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-      </div>
-
-      <div className='flex-1 overflow-y-auto'>
-        {isLoading ? (
-          <div className='flex items-center justify-center p-8'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary' />
-          </div>
-        ) : conversations.length === 0 ? (
-          <div className='flex flex-col items-center justify-center h-full p-4 text-center text-muted-foreground'>
-            <Upload className='h-8 w-8 mb-2 opacity-50' />
-            <p className='text-sm md:text-base'>No PDF conversations yet</p>
-            <p className='text-xs md:text-sm mt-1'>
-              Upload a PDF to start chatting!
-            </p>
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={() => fileInputRef.current?.click()}
-              className='mt-4 text-xs md:text-sm'
-            >
-              <Upload className='h-4 w-4 mr-2' />
-              Upload PDF
-            </Button>
-          </div>
-        ) : (
-          <div className='p-2 md:p-3 space-y-2'>
-            {conversations.map((conversation) => (
-              <div
-                key={conversation.id}
-                className={`group flex items-center gap-2 p-2 rounded-lg hover:bg-accent cursor-pointer ${
-                  state.currentPDFConversation?.id === conversation.id
-                    ? "bg-accent"
-                    : ""
-                }`}
-                onClick={() => handleSelect(conversation)}
-              >
-                <Upload className='h-4 w-4 shrink-0 text-muted-foreground' />
-                <div className='flex-1 min-w-0'>
-                  <p className='text-sm md:text-base font-medium truncate'>
-                    {conversation.title}
-                  </p>
-                  <p className='text-xs md:text-sm text-muted-foreground truncate'>
-                    {formatDistanceToNow(new Date(conversation.updated_at), {
-                      addSuffix: true,
-                    })}
-                  </p>
-                </div>
-                <Button
-                  variant='ghost'
-                  size='icon'
-                  className='opacity-0 group-hover:opacity-100 h-8 w-8'
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteConversation(conversation);
-                  }}
-                >
-                  <Trash2 className='h-4 w-4 text-muted-foreground hover:text-destructive' />
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       <input
@@ -253,6 +298,6 @@ export default function PDFConversationList() {
         onChange={handleFileUpload}
         className='hidden'
       />
-    </div>
+    </>
   );
 }

@@ -439,12 +439,18 @@ export default function DashboardPage() {
   return (
     <div className='flex flex-col h-screen lg:flex-row'>
       <Nav />
-      <div className='flex-1 overflow-y-auto pt-16 lg:pt-0 lg:pl-72'>
+      <div
+        className='flex-1 overflow-y-auto pt-16 lg:pt-0 lg:pl-[72px] transition-all duration-300 data-[expanded=true]:lg:pl-72 relative z-0'
+        data-expanded='true'
+      >
         <main className='container mx-auto px-4 py-4 lg:p-6 space-y-6 lg:space-y-8'>
           <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
             <div>
               <h1 className='text-2xl font-bold tracking-tight'>
-                Welcome back{state.user?.user_metadata?.full_name ? `, ${state.user.user_metadata.full_name}` : ''}
+                Welcome back
+                {state.user?.user_metadata?.full_name
+                  ? `, ${state.user.user_metadata.full_name}`
+                  : ""}
               </h1>
               <p className='text-muted-foreground'>
                 Here's an overview of your workspace

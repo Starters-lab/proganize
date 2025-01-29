@@ -171,3 +171,61 @@ body {
   padding-left: 1em;
   font-style: italic;
 }
+
+/* Flashcard specific styles */
+.perspective {
+  perspective: 2000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.rotateY-180 {
+  transform: rotateY(180deg);
+}
+
+/* Flashcard animations */
+.flashcard-enter {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.flashcard-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.flashcard-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.flashcard-exit-active {
+  opacity: 0;
+  transform: translateX(-100%);
+  transition: opacity 300ms, transform 300ms;
+}
+
+/* Gradient animation */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 5s ease infinite;
+}

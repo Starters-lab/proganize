@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { FileUp } from "lucide-react";
 import { ERROR_MESSAGES } from "@/utils/constants";
 import { formatPDFTitle } from "@/utils/helpers";
+import { FileText } from "lucide-react";
+import { Upload } from "lucide-react";
 
 export default function ChatPage() {
   const { state, dispatch } = useAppContext();
@@ -35,7 +37,9 @@ export default function ChatPage() {
     setOutline(outlineData);
   }, []);
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (!file || !state.user?.id) return;
 
@@ -165,79 +169,20 @@ export default function ChatPage() {
     }
   }, [state.currentPDFConversation]);
 
+  function setShowMobileList(arg0: boolean): void {
+    throw new Error("Function not implemented.");
+  }
+
   return (
-    <div className='flex'>
+    <div className='flex h-screen'>
       <Nav />
-
-      <div className='flex flex-1 overflow-hidden'>
-        {/* Main Content Area */}
-        <div className='flex flex-1 min-w-0'>
-          {/* Chat Area */}
-          <div className='flex-1 min-w-0 border-r'>
-            {!state.currentPDFConversation ? (
-              <div className='flex flex-col items-center justify-center h-full space-y-4'>
-                <input
-                  type='file'
-                  ref={fileInputRef}
-                  accept='.pdf'
-                  onChange={handleFileUpload}
-                  className='hidden'
-                />
-                <div className='text-center space-y-2'>
-                  <h2 className='text-2xl font-bold'>No Conversation Selected</h2>
-                  <p className='text-muted-foreground'>
-                    Upload a PDF to start chatting about its contents
-                  </p>
-                </div>
-                <Button
-                  size='lg'
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isLoading}
-                >
-                  <FileUp className='mr-2 h-4 w-4' />
-                  {isLoading ? "Uploading..." : "Upload PDF"}
-                </Button>
-                {error && (
-                  <p className='text-sm text-destructive text-center'>{error}</p>
-                )}
-              </div>
-            ) : (
-              <ChatLayer extractedText={extractedText} />
-            )}
-          </div>
-
-          {/* PDF Viewer and Analysis */}
-          <div className='w-[45%] bg-muted/30'>
-            <Tabs defaultValue='analysis' className='h-full flex flex-col'>
-              <div className='border-b px-4'>
-                <TabsList className='w-full justify-start my-3'>
-                  <TabsTrigger value='analysis'>Detailed Analysis</TabsTrigger>
-                  <TabsTrigger value='viewer'>Your pdf</TabsTrigger>
-                </TabsList>
-              </div>
-
-              <TabsContent value='viewer' className='flex-1'>
-                {isLoading ? (
-                  <div>Loading...</div>
-                ) : error ? (
-                  <div>Error: {error}</div>
-                ) : (
-                  <DynamicPDFViewer
-                    file={pdfFile}
-                    onTextExtracted={handleTextExtracted}
-                    onOutlineExtracted={handleOutlineExtracted}
-                  />
-                )}
-              </TabsContent>
-
-              <TabsContent
-                value='analysis'
-                className='flex-1 p-4 overflow-auto'
-              >
-                <AnalysisPanel pdfContent={savedContent || extractedText} />
-              </TabsContent>
-            </Tabs>
-          </div>
+      <div
+        className='flex-1 flex overflow-y-auto pt-16 lg:pt-0 lg:pl-[72px] transition-all duration-300 data-[expanded=true]:lg:pl-72 relative z-0'
+        data-expanded='true'
+      >
+        <PDFConversationList />
+        <div className='flex-1 flex flex-col min-w-0'>
+          <ChatLayer extractedText={extractedText} />
         </div>
       </div>
     </div>
