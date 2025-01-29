@@ -109,6 +109,6 @@
     "@types/react-dom": "npm:types-react-dom@19.0.0-rc.1"
   },
   "engines": {
-    "node": "20"
+    "node": "20.11.1"
   }
 }
