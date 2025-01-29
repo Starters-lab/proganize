@@ -7,10 +7,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Sparkles, Gift, Star } from "lucide-react";
+import { Check } from "lucide-react";
 import { useAppContext } from "@/app/context/appContext";
 import { useState } from "react";
 import { loadStripe } from "@stripe/stripe-js";
+import { useRouter } from "next/router";
+import cn from "classnames";
 
 interface PromotionCardProps {
   title: string;
@@ -32,8 +34,7 @@ export function PromotionCard({
   isHolidayOffer = false,
 }: PromotionCardProps) {
   const [isProcessing, setIsProcessing] = useState(false);
-  const { state } = useAppContext();
-  const totalCredits = baseCredits + bonusCredits;
+  const { state, dispatch } = useAppContext();
 
   const handlePurchase = async () => {
     if (!state.user?.id) {
@@ -58,7 +59,7 @@ export function PromotionCard({
         },
         body: JSON.stringify({
           userId: state.user.id,
-          creditAmount: totalCredits,
+          creditAmount: baseCredits + bonusCredits,
           unitPrice: price,
           isPromotion: isHolidayOffer || isSpecialOffer,
         }),
@@ -84,69 +85,53 @@ export function PromotionCard({
     }
   };
 
-  const cardClass = isHolidayOffer
-    ? "border-2 border-red-500 dark:border-red-400 bg-gradient-to-br from-red-50 to-transparent dark:from-red-950/30"
-    : isSpecialOffer
-      ? "border-2 border-blue-500 dark:border-blue-400 bg-gradient-to-br from-blue-50 to-transparent dark:from-blue-950/30"
-      : "hover:border-primary/50";
-
   return (
     <Card
-      className={`${cardClass} transition-all duration-300 hover:shadow-lg`}
+      className={cn(
+        "relative overflow-hidden transition-all duration-200 hover:shadow-lg",
+        (isHolidayOffer || isSpecialOffer) && "border-primary"
+      )}
     >
+      {(isHolidayOffer || isSpecialOffer) && (
+        <div className='absolute -right-12 top-6 bg-primary px-12 py-1 rotate-45'>
+          <span className='text-xs font-medium text-primary-foreground'>
+            {isHolidayOffer ? "Limited Time" : "Best Value"}
+          </span>
+        </div>
+      )}
       <CardHeader>
-        <div className='flex items-center justify-between'>
-          <div>
-            <CardTitle className='flex items-center gap-2'>
-              {title}
-              {isHolidayOffer && (
-                <span className='flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-normal text-red-600 dark:bg-red-900/50 dark:text-red-300'>
-                  <Gift className='h-3 w-3' />
-                  Holiday Special
-                </span>
-              )}
-              {isSpecialOffer && !isHolidayOffer && (
-                <span className='flex items-center gap-1 rounded-full bg-blue-100 px-2 py-1 text-xs font-normal text-blue-600 dark:bg-blue-900/50 dark:text-blue-300'>
-                  <Star className='h-3 w-3' />
-                  Popular Choice
-                </span>
-              )}
-            </CardTitle>
-            <CardDescription className='mt-2'>{description}</CardDescription>
-          </div>
-        </div>
+        <CardTitle className='text-xl md:text-2xl'>{title}</CardTitle>
+        <CardDescription className='text-sm md:text-base'>
+          {description}
+        </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className='flex items-baseline justify-between'>
-          <div className='flex items-baseline gap-1'>
-            <span className='text-3xl font-bold'>${price}</span>
-            <span className='text-sm text-muted-foreground'>one-time</span>
-          </div>
-          <div className='text-right'>
-            <div className='text-lg font-semibold'>
-              {totalCredits.toLocaleString()} words
-            </div>
-            {bonusCredits > 0 && (
-              <div className='text-sm font-medium text-green-600 dark:text-green-400'>
-                +{bonusCredits.toLocaleString()} bonus words
-              </div>
-            )}
-          </div>
+      <CardContent className='space-y-4'>
+        <div className='flex flex-col md:flex-row items-start md:items-end gap-2 md:gap-4'>
+          <div className='text-3xl md:text-4xl font-bold'>${price}</div>
+          <div className='text-sm text-muted-foreground'>One-time payment</div>
         </div>
-        <div className='mt-4 text-sm text-muted-foreground'>
+        <div className='space-y-2'>
           <div className='flex items-center gap-2'>
-            <Sparkles className='h-4 w-4' />
-            <span>
-              ${((price / totalCredits) * 1000).toFixed(2)} per 1000 words
+            <Check className='h-4 w-4 text-primary' />
+            <span className='text-sm md:text-base'>
+              {baseCredits.toLocaleString()} base credits
             </span>
           </div>
+          {bonusCredits > 0 && (
+            <div className='flex items-center gap-2'>
+              <Check className='h-4 w-4 text-primary' />
+              <span className='text-sm md:text-base'>
+                +{bonusCredits.toLocaleString()} bonus credits
+              </span>
+            </div>
+          )}
         </div>
       </CardContent>
       <CardFooter>
         <Button
-          className='w-full'
           onClick={handlePurchase}
-          variant={isHolidayOffer ? "destructive" : "default"}
+          className='w-full'
+          variant={isHolidayOffer || isSpecialOffer ? "default" : "outline"}
           disabled={isProcessing || !state.user?.id}
         >
           {isProcessing ? (
@@ -155,7 +140,7 @@ export function PromotionCard({
               <div className='h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent' />
             </>
           ) : (
-            "Get Started"
+            "Purchase Now"
           )}
         </Button>
       </CardFooter>

@@ -5,8 +5,9 @@ import { ThemeProvider } from "next-themes";
 import { AppProvider } from "./context/appContext";
 import { Toaster } from "@/components/ui/toaster";
 import Script from "next/script";
-import SupabaseProvider from './supabase-provider'
+import SupabaseProvider from "./supabase-provider";
 import { GlobalTopUpModal } from "@/components/shared/GlobalTopUpModal";
+import { registerSW } from "./pwa";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -14,28 +15,48 @@ const geistSans = localFont({
   weight: "100 900",
 });
 
-const lotaGrotesque = localFont({
-  src: "./fonts/Los-Andes-Lota-Grotesque-Regular.otf",
-  variable: "--font-lota-grotesque",
-  weight: "400",
-});
-
 export const metadata: Metadata = {
   title: "Proganize",
   description: "Organize smarter, Document faster",
   metadataBase: new URL("https://proganize.app"),
+  manifest: "/manifest.json",
+  themeColor: "#000000",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Proganize",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
+  registerSW();
+
   return (
     <html lang='en' suppressHydrationWarning>
-      <body
-        className={`${lotaGrotesque.variable} antialiased`}
-      >
+      <head>
+        <meta
+          name='viewport'
+          content='width=device-width, initial-scale=1, maximum-scale=1'
+        />
+        <meta name='application-name' content='Proganize' />
+        <meta name='apple-mobile-web-app-capable' content='yes' />
+        <meta name='apple-mobile-web-app-status-bar-style' content='default' />
+        <meta name='apple-mobile-web-app-title' content='Proganize' />
+        <meta name='format-detection' content='telephone=no' />
+        <meta name='mobile-web-app-capable' content='yes' />
+        <meta name='theme-color' content='#000000' />
+
+        <link rel='apple-touch-icon' href='/icons/icon-192x192.png' />
+        <link rel='manifest' href='/manifest.json' />
+      </head>
+      <body className={geistSans.variable}>
         <Script
           async
           defer
@@ -50,9 +71,11 @@ export default function RootLayout({
         >
           <SupabaseProvider>
             <AppProvider>
-              {children}
-              <GlobalTopUpModal />
-              <Toaster />
+              <div className='min-h-screen bg-background'>
+                {children}
+                <GlobalTopUpModal />
+                <Toaster />
+              </div>
             </AppProvider>
           </SupabaseProvider>
         </ThemeProvider>
