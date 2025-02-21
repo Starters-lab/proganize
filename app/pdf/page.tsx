@@ -11,12 +11,8 @@ import { STORAGE_CONSTANTS } from "@/utils/constants";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnalysisPanel } from "@/components/pdf/analysisPanel";
 import { pdfService } from "@/utils/services/pdfService";
-import { Button } from "@/components/ui/button";
-import { FileUp } from "lucide-react";
 import { ERROR_MESSAGES } from "@/utils/constants";
 import { formatPDFTitle } from "@/utils/helpers";
-import { FileText } from "lucide-react";
-import { Upload } from "lucide-react";
 
 export default function ChatPage() {
   const { state, dispatch } = useAppContext();
