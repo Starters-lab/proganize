@@ -8,6 +8,12 @@ const client = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
+const summarizeContent = async (fullText: string): Promise<string> => {
+    // Implement a simple summarization logic or call a summarization API
+    const summary = fullText.split("\n").slice(0, 5).join("\n"); // Example: take the first 5 lines
+    return summary;
+};
+
 function trimConversation(conversation: any[], maxChars: number): any[] {
     let totalChars = JSON.stringify(conversation).length;
     while (totalChars > maxChars && conversation.length > 0) {
@@ -28,21 +34,22 @@ export async function POST(req: NextRequest) {
 
     // Verify the token with Supabase
     const { data: user, error } = await supabase.auth.getUser(token);
-    console.log("User:", user);
     if (error || !user) {
         return new Response("Unauthorized, invalid token", { status: 401 });
     }
+    const summarizedDocument = await summarizeContent(referenceDocument);
 
     try {
         // Check word credits before processing
         const remainingCredits = await checkWordCredits(user.user.id);
-        
+
         // Estimate token usage (system prompt + conversation + reference doc)
-        const systemPrompt = `You are an intelligent AI assistant specialized in analyzing and answering questions about PDF documents. 
+        const systemPrompt =
+            `You are an intelligent AI assistant specialized in analyzing and answering questions about PDF documents. 
 
 Reference Document Content:
 \`\`\`
-${referenceDocument}
+${summarizedDocument}
 \`\`\`
 
 Key Responsibilities:
@@ -71,14 +78,20 @@ Important:
 - Maintain context from the conversation history
 
 Please analyze the document content and respond to queries in a way that demonstrates understanding of the full context while remaining focused on the specific question at hand.`;
-        const estimatedTokens = Math.ceil((systemPrompt.length + JSON.stringify(conversation).length + referenceDocument.length) / 4);
+        const estimatedTokens = Math.ceil(
+            (systemPrompt.length + JSON.stringify(conversation).length +
+                referenceDocument.length) / 4,
+        );
         const estimatedResponseTokens = 1500; // max_tokens parameter
-        const estimatedTotalCredits = calculateWordCredits(estimatedTokens, estimatedResponseTokens);
+        const estimatedTotalCredits = calculateWordCredits(
+            estimatedTokens,
+            estimatedResponseTokens,
+        );
 
         if (remainingCredits < estimatedTotalCredits) {
             return new Response(
                 JSON.stringify({ error: "Insufficient word credits" }),
-                { status: 402 }
+                { status: 402 },
             );
         }
 
@@ -107,41 +120,46 @@ Please analyze the document content and respond to queries in a way that demonst
         // Calculate actual token usage and deduct credits
         const actualCredits = calculateWordCredits(
             response.usage?.prompt_tokens || estimatedTokens,
-            response.usage?.completion_tokens || estimatedResponseTokens
+            response.usage?.completion_tokens || estimatedResponseTokens,
         );
 
         await deductWordCredits(user.user.id, actualCredits);
 
         // Format the response with markdown
         let formattedResponse = response.choices[0].message.content;
-        
+
         // Add citations if they exist in the text
         formattedResponse = formattedResponse.replace(
             /\(page \d+\)/g,
-            (match) => `**${match}**`
+            (match) => `**${match}**`,
         );
 
         // Enhance code blocks and quotes
         formattedResponse = formattedResponse.replace(
             /```([\s\S]*?)```/g,
-            (match, code) => `<pre><code>${code}</code></pre>`
+            (match, code) => `<pre><code>${code}</code></pre>`,
         );
 
-        return new Response(JSON.stringify({
-            reply: formattedResponse,
-            metadata: {
-                model: "gpt-4",
-                tokens: response.usage?.total_tokens || 0
+        return new Response(
+            JSON.stringify({
+                reply: formattedResponse,
+                metadata: {
+                    model: "gpt-4",
+                    tokens: response.usage?.total_tokens || 0,
+                },
+                remainingCredits: remainingCredits - actualCredits,
+            }),
+            {
+                headers: { "Content-Type": "application/json" },
             },
-            remainingCredits: remainingCredits - actualCredits
-        }), {
-            headers: { "Content-Type": "application/json" },
-        });
+        );
     } catch (error: any) {
         console.error("Error in PDF chat:", error);
         return new Response(
-            JSON.stringify({ error: error.message || "Failed to process request" }),
-            { status: 500 }
+            JSON.stringify({
+                error: error.message || "Failed to process request",
+            }),
+            { status: 500 },
         );
     }
 }

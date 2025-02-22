@@ -1,6 +1,6 @@
-import { supabase } from '../supabase/instance';
-import { capitalize } from '../helpers';
-import { getToken } from '../supabaseOperations';
+import { supabase } from "../supabase/instance";
+import { capitalize } from "../helpers";
+import { getToken } from "../supabaseOperations";
 
 interface PDFContent {
   content: string;
@@ -9,7 +9,7 @@ interface PDFContent {
     author?: string;
     keywords?: string[];
     pageCount?: number;
-    status?: 'processing' | 'complete' | 'error';
+    status?: "processing" | "complete" | "error";
     error?: string;
   } | null;
 }
@@ -18,17 +18,17 @@ export const pdfService = {
   async saveExtractedContent(
     pdfConversationId: string,
     content: PDFContent,
-    userId: string
+    userId: string,
   ) {
-    console.log('Saving PDF content:', {
+    console.log("Saving PDF content:", {
       pdfConversationId,
       contentLength: content.content.length,
       metadata: content.metadata,
-      userId
+      userId,
     });
     try {
       const { data, error } = await supabase
-        .from('pdf_extracted_content')
+        .from("pdf_extracted_content")
         .insert({
           pdf_conversation_id: pdfConversationId,
           content: content.content,
@@ -39,16 +39,16 @@ export const pdfService = {
         .single();
 
       if (error) {
-        if (error.code === '23505') { // Unique violation
+        if (error.code === "23505") { // Unique violation
           // Try to update instead
           const { data: updateData, error: updateError } = await supabase
-            .from('pdf_extracted_content')
+            .from("pdf_extracted_content")
             .update({
               content: content.content,
               metadata: content.metadata || {},
             })
-            .eq('pdf_conversation_id', pdfConversationId)
-            .eq('user_id', userId)
+            .eq("pdf_conversation_id", pdfConversationId)
+            .eq("user_id", userId)
             .select()
             .single();
 
@@ -64,26 +64,47 @@ export const pdfService = {
     }
   },
 
-  async getExtractedContent(pdfConversationId: string | undefined, userId?: string) {
+  async getExtractedContent(
+    pdfConversationId: string | undefined,
+    userId?: string,
+  ) {
     if (!pdfConversationId) return null;
-    
+
+    // Check local storage first
+    const cachedContent = localStorage.getItem(
+      `pdf_extracted_content`,
+    );
+    if (cachedContent) {
+      return JSON.parse(cachedContent); // Return cached content if available
+    }
+
     try {
       const query = supabase
-        .from('pdf_extracted_content')
-        .select('*')
-        .eq('pdf_conversation_id', pdfConversationId)
-        .order('created_at', { ascending: false })
+        .from("pdf_extracted_content")
+        .select("*")
+        .eq("pdf_conversation_id", pdfConversationId)
+        .order("created_at", { ascending: false })
         .limit(1);
 
       if (userId) {
-        query.eq('user_id', userId);
+        query.eq("user_id", userId);
       }
 
       const { data, error } = await query;
       console.log(data);
       if (error) return null;
+
+      // Save the result to local storage
+      if (data?.[0]) {
+        localStorage.setItem(
+          `pdf_extracted_content`,
+          JSON.stringify(data[0]),
+        );
+      }
+
       return data?.[0] || null;
-    } catch {
+    } catch (error) {
+      console.error("Error fetching extracted content:", error);
       return null;
     }
   },
@@ -116,20 +137,20 @@ Remember to:
 
   async generateSummary(content: string): Promise<string> {
     const token = await getToken();
-    const response = await fetch('/api/pdf-analysis', {
-      method: 'POST',
+    const response = await fetch("/api/pdf-analysis", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`, 
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         content,
-        type: 'summary',
+        type: "summary",
       }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to generate summary');
+      throw new Error("Failed to generate summary");
     }
 
     const data = await response.json();
@@ -138,20 +159,20 @@ Remember to:
 
   async extractKeyPoints(content: string): Promise<string[]> {
     const token = await getToken();
-    const response = await fetch('/api/pdf-analysis', {
-      method: 'POST',
+    const response = await fetch("/api/pdf-analysis", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         content,
-        type: 'keyPoints',
+        type: "keyPoints",
       }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to extract key points');
+      throw new Error("Failed to extract key points");
     }
 
     const data = await response.json();
@@ -160,87 +181,92 @@ Remember to:
 
   async identifyTopics(content: string): Promise<string[]> {
     const token = await getToken();
-    const response = await fetch('/api/pdf-analysis', {
-      method: 'POST',
+    const response = await fetch("/api/pdf-analysis", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         content,
-        type: 'topics',
+        type: "topics",
       }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to identify topics');
+      throw new Error("Failed to identify topics");
     }
 
     const data = await response.json();
     return data.topics;
   },
 
-  async generateTOC(content: string): Promise<Array<{ title: string; page: number }>> {
+  async generateTOC(
+    content: string,
+  ): Promise<Array<{ title: string; page: number }>> {
     const token = await getToken();
-    const response = await fetch('/api/pdf-analysis', {
-      method: 'POST',
+    const response = await fetch("/api/pdf-analysis", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         content,
-        type: 'toc',
+        type: "toc",
       }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to generate table of contents');
+      throw new Error("Failed to generate table of contents");
     }
 
     const data = await response.json();
     return data.toc;
   },
 
-  async generateFlashcards(content: string): Promise<Array<{ question: string; answer: string }>> {
+  async generateFlashcards(
+    content: string,
+  ): Promise<Array<{ question: string; answer: string }>> {
     const token = await getToken();
-    const response = await fetch('/api/pdf-analysis', {
-      method: 'POST',
+    const response = await fetch("/api/pdf-analysis", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         content,
-        type: 'flashcards',
+        type: "flashcards",
       }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to generate flashcards');
+      throw new Error("Failed to generate flashcards");
     }
 
     const data = await response.json();
     return data.flashcards;
   },
 
-  async generateQuiz(content: string): Promise<Array<{ question: string; options: string[]; answer: string }>> {
+  async generateQuiz(
+    content: string,
+  ): Promise<Array<{ question: string; options: string[]; answer: string }>> {
     const token = await getToken();
-    const response = await fetch('/api/pdf-analysis', {
-      method: 'POST',
+    const response = await fetch("/api/pdf-analysis", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
-
       },
       body: JSON.stringify({
         content,
-        type: 'quiz',
+        type: "quiz",
       }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to generate quiz');
+      throw new Error("Failed to generate quiz");
     }
 
     const data = await response.json();

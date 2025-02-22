@@ -18,6 +18,8 @@ import { STORAGE_CONSTANTS, ERROR_MESSAGES } from "@/utils/constants";
 import { PDFConversation } from "@/types/pdf";
 import { formatPDFTitle } from "@/utils/helpers";
 import cn from "classnames";
+import { pdfService } from "@/utils/services/pdfService";
+import { extractPDFContent } from "@/utils/extractPdf";
 
 export default function PDFConversationList() {
   const { state, dispatch } = useAppContext();
@@ -28,6 +30,7 @@ export default function PDFConversationList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [extractedText, setExtractedText] = useState("");
 
   useEffect(() => {
     if (state.user) {
@@ -113,7 +116,12 @@ export default function PDFConversationList() {
     }
   };
 
+  const cleanText = (text: string): string => {
+    return text.replace(/[\u0000-\u001F\u007F-\u009F]/g, ""); // Remove control characters
+  };
+
   const handleSelect = (conversation: PDFConversation) => {
+    localStorage.removeItem(`pdf_extracted_content`);
     dispatch({
       type: "SET_CURRENT_PDF_CONVERSATION",
       payload: conversation,
@@ -156,6 +164,9 @@ export default function PDFConversationList() {
 
       if (uploadError) throw uploadError;
 
+      // Extract PDF content using PDF.js
+      const extractedContent = await extractPDFContent(file);
+
       // Create conversation entry
       const { data: conversationData, error: conversationError } =
         await supabase
@@ -170,6 +181,19 @@ export default function PDFConversationList() {
           .single();
 
       if (conversationError) throw conversationError;
+
+      // Save extracted content
+      await pdfService.saveExtractedContent(
+        conversationData.id,
+        {
+          content: cleanText(extractedContent.text),
+          metadata: {
+            pageCount: extractedContent.pageCount,
+            status: "complete",
+          },
+        },
+        state.user?.id || ""
+      );
 
       setConversations((prev) => [conversationData, ...prev]);
       dispatch({

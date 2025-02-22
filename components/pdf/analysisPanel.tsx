@@ -10,13 +10,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, BookOpen, ListChecks, FlaskConical } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -289,8 +282,8 @@ export function AnalysisPanel({ pdfContent }: AnalysisPanelProps) {
 
       <div
         className={cn(
-          'w-full lg:w-[400px] fixed lg:relative inset-0 lg:inset-auto bg-background transform transition-transform duration-200 ease-in-out lg:translate-x-0 border-l',
-          isOpen ? 'translate-x-0' : 'translate-x-full'
+          "w-full lg:w-[400px] fixed lg:relative inset-0 lg:inset-auto bg-background transform transition-transform duration-200 ease-in-out lg:translate-x-0 border-l",
+          isOpen ? "translate-x-0" : "translate-x-full"
         )}
       >
         <div className='flex flex-col h-full'>
@@ -304,7 +297,9 @@ export function AnalysisPanel({ pdfContent }: AnalysisPanelProps) {
               >
                 <ArrowRight className='h-4 w-4' />
               </Button>
-              <h2 className='font-semibold text-sm md:text-base'>Analysis Results</h2>
+              <h2 className='font-semibold text-sm md:text-base'>
+                Analysis Results
+              </h2>
             </div>
             <Button
               variant='ghost'
@@ -333,30 +328,32 @@ export function AnalysisPanel({ pdfContent }: AnalysisPanelProps) {
                     <CardHeader className='p-3 md:p-4 space-y-1'>
                       <div className='flex items-center justify-between'>
                         <div className='flex items-center gap-2'>
-                          {result === 'summary' ? (
+                          {result === "summary" ? (
                             <FileText className='h-4 w-4 text-primary' />
                           ) : (
                             <List className='h-4 w-4 text-primary' />
                           )}
                           <CardTitle className='text-sm md:text-base'>
-                            {result === 'summary'
-                              ? 'Summary'
-                              : 'Extracted Information'}
+                            {result === "summary"
+                              ? "Summary"
+                              : "Extracted Information"}
                           </CardTitle>
                         </div>
                         <Button
                           variant='ghost'
                           size='icon'
                           className='h-8 w-8'
-                          onClick={() => setResults({ ...results, [result]: undefined })}
+                          onClick={() =>
+                            setResults({ ...results, [result]: undefined })
+                          }
                         >
                           <X className='h-4 w-4' />
                         </Button>
                       </div>
                       <CardDescription className='text-xs md:text-sm'>
-                        {result === 'summary'
-                          ? 'Summary'
-                          : 'Extracted Information'}
+                        {result === "summary"
+                          ? "Summary"
+                          : "Extracted Information"}
                       </CardDescription>
                     </CardHeader>
                     <CardContent className='p-3 md:p-4 pt-0'>
