@@ -19,8 +19,7 @@ import { PDFConversation } from "@/types/pdf";
 import { formatPDFTitle } from "@/utils/helpers";
 import cn from "classnames";
 import { pdfService } from "@/utils/services/pdfService";
-import * as pdfjs from "pdfjs-dist/legacy/build/pdf";
-import "pdfjs-dist/legacy/build/pdf.worker";
+import { extractPDFContent } from "@/utils/extractPdf";
 
 export default function PDFConversationList() {
   const { state, dispatch } = useAppContext();
@@ -117,7 +116,12 @@ export default function PDFConversationList() {
     }
   };
 
+  const cleanText = (text: string): string => {
+    return text.replace(/[\u0000-\u001F\u007F-\u009F]/g, ""); // Remove control characters
+  };
+
   const handleSelect = (conversation: PDFConversation) => {
+    localStorage.removeItem(`pdf_extracted_content`);
     dispatch({
       type: "SET_CURRENT_PDF_CONVERSATION",
       payload: conversation,
@@ -182,7 +186,7 @@ export default function PDFConversationList() {
       await pdfService.saveExtractedContent(
         conversationData.id,
         {
-          content: extractedContent.text,
+          content: cleanText(extractedContent.text),
           metadata: {
             pageCount: extractedContent.pageCount,
             status: "complete",
@@ -202,39 +206,6 @@ export default function PDFConversationList() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const extractPDFContent = async (
-    file: File
-  ): Promise<{ text: string; pageCount: number }> => {
-    // Convert file to ArrayBuffer
-    const arrayBuffer = await file.arrayBuffer();
-
-    // Load PDF document
-    const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
-
-    // Extract text from all pages
-    const textPromises = Array.from({ length: pdf.numPages }, (_, i) =>
-      pdf.getPage(i + 1).then(async (page: any) => {
-        const textContent = await page.getTextContent();
-        return textContent.items
-          .map((item: any) =>
-            "str" in item ? (item as { str: string }).str : ""
-          )
-          .join(" ");
-      })
-    );
-
-    const pageTexts = await Promise.all(textPromises);
-
-    // Combine texts from all pages
-    const fullText = pageTexts.join("\n\n");
-    setExtractedText(fullText);
-
-    return {
-      text: fullText,
-      pageCount: pdf.numPages,
-    };
   };
 
   return (

@@ -56,10 +56,10 @@ import {
 
 const mainNavItems = [
   { name: "Dashboard", href: "/", icon: Home },
+  { name: "Chat", href: "/pdf", icon: FileText },
+  { name: "Flashcards", href: "/flashcards", icon: Slash },
   { name: "Study Materials", href: "/study", icon: Book },
   { name: "Note Editor", href: "/write", icon: PenTool },
-  { name: "Doc Chat", href: "/pdf", icon: FileText },
-  { name: "Flashcards", href: "/flashcards", icon: Slash },
   { name: "Quizzes", href: "/quizzes", icon: Brain },
   { name: "AI Examiner", href: "/ai-examiner", icon: GraduationCap },
 ];
@@ -218,8 +218,8 @@ export default function Nav() {
                 <Menu className='h-5 w-5' />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className='w-80 p-0 pt-16 border-t-0'>
-              <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+            <SheetContent side='left' className='w-80 p-0 pt-16 border-t-0'>
+              <SheetTitle className='sr-only'>Navigation Menu</SheetTitle>
               <MobileNavContent />
             </SheetContent>
           </Sheet>

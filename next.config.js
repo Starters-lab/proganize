@@ -17,20 +17,15 @@ const nextConfig = {
     ],
   },
   webpack: (config, { isServer }) => {
-    config.module.rules.push({
-      test: /\.worker\.js$/,
-      loader: "worker-loader",
-      options: {
-        name: "static/[hash].worker.js",
-        publicPath: "/_next/",
-      },
-    });
+    // Add handling for PDF.js worker
+    config.resolve.alias.pdfjs = "pdfjs-dist/legacy/build/pdf";
 
     if (!isServer) {
       config.resolve.fallback = {
+        ...config.resolve.fallback,
         fs: false,
-        net: false,
-        tls: false,
+        stream: false,
+        path: false,
       };
     }
 

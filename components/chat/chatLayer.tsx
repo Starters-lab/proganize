@@ -12,6 +12,7 @@ import { PDFConversation } from "@/types/pdf";
 import { ERROR_MESSAGES, STORAGE_CONSTANTS } from "@/utils/constants";
 import { formatPDFTitle } from "@/utils/helpers";
 import cn from "classnames";
+import { extractPDFContent } from "@/utils/extractPdf";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -232,6 +233,10 @@ export default function ChatLayer({ extractedText }: ChatLayerProps) {
     }
   };
 
+  const cleanText = (text: string): string => {
+    return text.replace(/[\u0000-\u001F\u007F-\u009F]/g, ""); // Remove control characters
+  };
+
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -271,6 +276,9 @@ export default function ChatLayer({ extractedText }: ChatLayerProps) {
 
       setUploadProgress(100);
 
+      // Extract PDF content using PDF.js
+      const extractedContent = await extractPDFContent(file);
+
       // Create conversation entry
       const { data: conversationData, error: conversationError } =
         await supabase
@@ -285,6 +293,19 @@ export default function ChatLayer({ extractedText }: ChatLayerProps) {
           .single();
 
       if (conversationError) throw conversationError;
+
+      // Save extracted content
+      await pdfService.saveExtractedContent(
+        conversationData.id,
+        {
+          content: cleanText(extractedContent.text),
+          metadata: {
+            pageCount: extractedContent.pageCount,
+            status: "complete",
+          },
+        },
+        state.user?.id || ""
+      );
 
       setConversations((prev) => [conversationData, ...prev]);
       dispatch({
@@ -433,6 +454,7 @@ export default function ChatLayer({ extractedText }: ChatLayerProps) {
                         "bg-muted"
                     )}
                     onClick={() => {
+                      localStorage.removeItem(`pdf_extracted_content`);
                       dispatch({
                         type: "SET_CURRENT_PDF_CONVERSATION",
                         payload: conversation,
